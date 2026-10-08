@@ -1,0 +1,17 @@
+[project]
+name = "saans-saathi"
+version = "0.1.0"
+description = "Turns the morning air forecast into a school-day plan for Delhi schools."
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

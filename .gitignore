@@ -1,0 +1,10 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.aws-sam/
+node_modules/
+dist/
+out/
+.DS_Store
