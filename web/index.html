@@ -36,7 +36,7 @@
   h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin: 0 0 10px; font-weight: 600; }
   select, input[type=date] { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow); }
-  .run button { width: 100%; font: 600 18px/1.2 inherit; font-family: inherit; padding: 18px; border: 0; border-radius: 12px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  .run button { width: 100%; font-family: inherit; font-size: 18px; font-weight: 700; line-height: 1.2; padding: 18px; border: 0; border-radius: 12px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
   .run button:disabled { opacity: .6; cursor: progress; }
   .run .opts { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 12px; color: var(--ink-2); font-size: 14px; }
   .run label { display: inline-flex; gap: 6px; align-items: center; }
@@ -59,16 +59,18 @@
   .tag.indoors { background: var(--indoors-bg); color: var(--indoors); }
   .tag.keep { background: var(--keep-bg); color: var(--keep); }
   .advisories { margin: 10px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; }
-  .chart { position: relative; }
+  .chart { position: relative; min-width: 0; }
+  main > * { min-width: 0; }
+  .blocks li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
   .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
-  .chart .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 13px; padding: 6px 9px; border-radius: 8px; white-space: nowrap; transform: translate(-50%, -110%); opacity: 0; transition: opacity .1s; }
+  .chart .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 13px; padding: 6px 9px; border-radius: 8px; max-width: 90%; white-space: normal; transform: translate(-50%, -110%); opacity: 0; transition: opacity .1s; }
   .chart-foot { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-3); margin-top: 8px; }
   .chart-foot span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; background: var(--c); }
   .linkbtn { background: none; border: 0; color: var(--accent); font: inherit; font-size: 13px; padding: 0; cursor: pointer; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
   th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; box-shadow: var(--shadow); }
   .stat b { display: block; font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
   .stat span { font-size: 13px; color: var(--ink-2); }
