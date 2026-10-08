@@ -125,7 +125,8 @@ function catColor(aqi) { return (CATS.find((c) => aqi <= c[1]) || CATS[CATS.leng
 
 function renderChart(p) {
   const hours = p.hours.filter((h) => h.aqi != null);
-  const W = 640, H = 240, padL = 34, padR = 8, padT = 22, padB = 28;
+  chartW = Math.round($("chart").getBoundingClientRect().width) || 640;
+  const W = Math.max(300, chartW), H = 240, padL = 34, padR = 8, padT = 22, padB = 28;
   const top = Math.max(300, Math.ceil(Math.max(...hours.map((h) => h.aqi)) / 100) * 100);
   const y = (v) => padT + (H - padT - padB) * (1 - v / top);
   const slot = (W - padL - padR) / hours.length;
@@ -144,7 +145,8 @@ function renderChart(p) {
     svg += `<rect x="${cx - slot / 2}" y="${padT}" width="${slot}" height="${base - padT}" fill="transparent"/>`;
     svg += `<path d="${path}" fill="${catColor(h.aqi)}"${isClean ? ` stroke="var(--ring)" stroke-width="2"` : ""}/>`;
     if (isClean || (p.worst && h.hour === p.worst.hour)) {
-      svg += `<text x="${cx}" y="${yt - 6}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">${h.aqi}${isClean ? " · cleanest" : ""}</text>`;
+      const nearEnd = cx + 50 > W - padR;
+      svg += `<text x="${nearEnd ? x + bw : cx}" y="${yt - 6}" text-anchor="${nearEnd ? "end" : "middle"}" font-size="12" font-weight="600" fill="var(--ink)">${h.aqi}${isClean ? " · cleanest" : ""}</text>`;
     }
     svg += `<text x="${cx}" y="${H - 8}" text-anchor="middle" font-size="12" fill="var(--ink-2)">${h.time}</text></g>`;
   });
@@ -178,5 +180,11 @@ function renderMessages(rec) {
     <div class="muted">English</div><div class="msg">${esc(m.parent_en)}</div>
     <p class="muted">Parents join on Telegram with <b>/join ${esc(school.join_code)}</b>.</p>`;
 }
+
+let chartW = 0;
+new ResizeObserver(([entry]) => {
+  const w = Math.round(entry.contentRect.width);
+  if (last && Math.abs(w - chartW) > 4) renderChart(last.plan);
+}).observe($("chart"));
 
 init();
