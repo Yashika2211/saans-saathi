@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SaansSaathi</title>
+<meta name="description" content="Turns the morning air forecast into a school-day plan, approved by the principal and sent to parents as a Hindi voice note.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%2392D050'/><path d='M8 18c4-6 12-6 16 0' stroke='%23fff' stroke-width='3' fill='none' stroke-linecap='round'/></svg>">
+<style>
+  :root {
+    --bg: #f6f7f5; --surface: #ffffff; --ink: #17201b; --ink-2: #4a5550; --ink-3: #7b8580;
+    --line: #e3e7e4; --grid: #eef1ee; --accent: #0f6b4f; --accent-ink: #ffffff; --accent-soft: #e5f2ec;
+    --move: #0f6b4f; --move-bg: #e5f2ec; --indoors: #8a3b12; --indoors-bg: #fbeee5; --keep: #4a5550; --keep-bg: #eef1ee;
+    --ring: #17201b; --shadow: 0 1px 2px rgba(0,0,0,.04), 0 2px 8px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1412; --surface: #171e1b; --ink: #e9eeeb; --ink-2: #b2bcb7; --ink-3: #85908a;
+      --line: #27302c; --grid: #212a26; --accent: #4cc497; --accent-ink: #08130f; --accent-soft: #15302a;
+      --move: #6fd6ad; --move-bg: #15302a; --indoors: #f2a374; --indoors-bg: #3a2416; --keep: #b2bcb7; --keep-bg: #222a27;
+      --ring: #e9eeeb; --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1412; --surface: #171e1b; --ink: #e9eeeb; --ink-2: #b2bcb7; --ink-3: #85908a;
+    --line: #27302c; --grid: #212a26; --accent: #4cc497; --accent-ink: #08130f; --accent-soft: #15302a;
+    --move: #6fd6ad; --move-bg: #15302a; --indoors: #f2a374; --indoors-bg: #3a2416; --keep: #b2bcb7; --keep-bg: #222a27;
+    --ring: #e9eeeb; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 8px 0 16px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+  h1 small { display: block; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin: 0 0 10px; font-weight: 600; }
+  select, input[type=date] { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .run button { width: 100%; font: 600 18px/1.2 inherit; font-family: inherit; padding: 18px; border: 0; border-radius: 12px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  .run button:disabled { opacity: .6; cursor: progress; }
+  .run .opts { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-top: 12px; color: var(--ink-2); font-size: 14px; }
+  .run label { display: inline-flex; gap: 6px; align-items: center; }
+  .steps { list-style: none; padding: 0; margin: 12px 0 0; font-size: 14px; color: var(--ink-3); }
+  .steps li { padding: 2px 0; }
+  .steps li.done { color: var(--ink); }
+  .steps li.done::before { content: "✓ "; color: var(--accent); }
+  .steps li.now { color: var(--ink); font-weight: 600; }
+  .steps li.now::before { content: "… "; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+  .chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--keep-bg); color: var(--keep); }
+  .chip.pending { background: #fff4d6; color: #7a5600; }
+  .chip.sent, .chip.approved, .chip.sending { background: var(--move-bg); color: var(--move); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chip.pending { background: #3a3014; color: #f0cf73; } }
+  .meta { color: var(--ink-2); font-size: 14px; margin: 4px 0 12px; }
+  .blocks { list-style: none; padding: 0; margin: 0; }
+  .blocks li { display: grid; grid-template-columns: 76px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); align-items: baseline; }
+  .tag { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-align: center; padding: 3px 0; border-radius: 6px; }
+  .tag.reschedule { background: var(--move-bg); color: var(--move); }
+  .tag.indoors { background: var(--indoors-bg); color: var(--indoors); }
+  .tag.keep { background: var(--keep-bg); color: var(--keep); }
+  .advisories { margin: 10px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 13px; padding: 6px 9px; border-radius: 8px; white-space: nowrap; transform: translate(-50%, -110%); opacity: 0; transition: opacity .1s; }
+  .chart-foot { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+  .chart-foot span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; background: var(--c); }
+  .linkbtn { background: none; border: 0; color: var(--accent); font: inherit; font-size: 13px; padding: 0; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+  th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; box-shadow: var(--shadow); }
+  .stat b { display: block; font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .stat span { font-size: 13px; color: var(--ink-2); }
+  .msg { white-space: pre-wrap; font-size: 15px; background: var(--bg); border-radius: 10px; padding: 10px 12px; margin: 6px 0 12px; }
+  .msg[lang=hi] { font-size: 17px; line-height: 1.6; }
+  .muted { color: var(--ink-3); font-size: 13px; }
+  .empty { color: var(--ink-2); }
+  .err { color: var(--indoors); font-size: 14px; margin-top: 8px; }
+  footer { color: var(--ink-3); font-size: 12px; margin-top: 24px; }
+  footer a { color: inherit; }
+  @media (max-width: 480px) { .stat b { font-size: 22px; } .blocks li { grid-template-columns: 64px 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>SaansSaathi <small>Clean-air plan for the school day</small></h1>
+    <select id="school" aria-label="School"></select>
+  </header>
+
+  <section class="card run" aria-labelledby="run-h">
+    <h2 id="run-h">Morning check</h2>
+    <button id="run">Run 5:30 AM check now</button>
+    <div class="opts">
+      <label><input type="radio" name="mode" value="replay" checked> Replay a past day</label>
+      <input type="date" id="replay" value="2024-11-18" aria-label="Replay date">
+      <label><input type="radio" name="mode" value="live"> Today's forecast</label>
+    </div>
+    <ol class="steps" id="steps" hidden>
+      <li>Fetch hourly PM2.5 / PM10 forecast</li>
+      <li>Apply rules, write messages with the agent</li>
+      <li>Waiting for principal approval</li>
+      <li>Parents notified with text + voice note</li>
+    </ol>
+    <div class="err" id="err" hidden></div>
+  </section>
+
+  <section class="stats" aria-label="Impact">
+    <div class="stat"><b id="s-hours">–</b><span>child-hours moved out of bad air</span></div>
+    <div class="stat"><b id="s-parents">–</b><span>parent notes delivered</span></div>
+    <div class="stat"><b id="s-subs">–</b><span>parents subscribed</span></div>
+  </section>
+
+  <section class="card" style="margin-top:14px" aria-labelledby="plan-h">
+    <div class="row"><h2 id="plan-h" style="margin:0">Today's plan</h2><span class="chip" id="status">–</span></div>
+    <div id="plan"><p class="empty">No plan yet. Run the check above.</p></div>
+  </section>
+
+  <section class="card" aria-labelledby="chart-h">
+    <div class="row"><h2 id="chart-h" style="margin:0">AQI (est.) by school hour</h2><button class="linkbtn" id="toggle-table">Show table</button></div>
+    <div class="chart" id="chart"><p class="empty">–</p></div>
+    <div class="chart-foot" id="legend"></div>
+    <div id="table" hidden></div>
+  </section>
+
+  <section class="card" aria-labelledby="msg-h">
+    <h2 id="msg-h">What parents receive</h2>
+    <div id="messages"><p class="empty">–</p></div>
+  </section>
+
+  <footer>
+    Demo schools are fictional, placed at real Delhi locations. AQI (est.) applies CPCB NAQI breakpoints to hourly forecast PM2.5 and PM10; the official index uses 24-hour averages.
+    Forecast data: <a href="https://open-meteo.com/">Open-Meteo</a> Air Quality API (CAMS), CC BY 4.0. Runs on AWS Lambda, Bedrock, Polly and DynamoDB.
+  </footer>
+</main>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
