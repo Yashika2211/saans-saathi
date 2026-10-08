@@ -1,0 +1,148 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SaansSaathi - school-day air plans with principal approval and Hindi voice notes for parents.
+
+Parameters:
+  BedrockModelId:
+    Type: String
+    Default: anthropic.claude-sonnet-5-5
+    Description: Bedrock model or inference profile id used by the Strands agent.
+  TelegramTokenParam:
+    Type: String
+    Default: /saans/telegram-bot-token
+    Description: SSM SecureString parameter holding the Telegram bot token (create it before deploying).
+  PrincipalPin:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: Optional PIN required for /principal registration.
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Architectures: [arm64]
+    Layers: [!Ref DepsLayer]
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref Table
+        AUDIO_BUCKET: !Ref AudioBucket
+        TELEGRAM_TOKEN_PARAM: !Ref TelegramTokenParam
+        BEDROCK_MODEL_ID: !Ref BedrockModelId
+        BEDROCK_REGION: !Ref AWS::Region
+        PRINCIPAL_PIN: !Ref PrincipalPin
+        SAANS_CACHE_DIR: /tmp/saans-cache
+        SAANS_DATA_DIR: /tmp/saans-data
+
+Resources:
+  DepsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: .
+      CompatibleRuntimes: [python3.12]
+      CompatibleArchitectures: [arm64]
+    Metadata:
+      BuildMethod: makefile
+
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+        - { AttributeName: sk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+        - { AttributeName: sk, KeyType: RANGE }
+
+  AudioBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - { Id: expire-audio, Status: Enabled, ExpirationInDays: 30 }
+
+  WorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: saans.lambdas.worker_handler
+      Timeout: 300
+      MemorySize: 1024
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref Table }
+        - S3CrudPolicy: { BucketName: !Ref AudioBucket }
+        - SSMParameterReadPolicy: { ParameterName: !Select [1, !Split ["/", !Ref TelegramTokenParam]] }
+        - Statement:
+            - Effect: Allow
+              Action: [bedrock:InvokeModel, bedrock:InvokeModelWithResponseStream]
+              Resource: "*"
+            - Effect: Allow
+              Action: [polly:SynthesizeSpeech]
+              Resource: "*"
+      Events:
+        MorningCheck:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: cron(30 5 ? * MON-SAT *)
+            ScheduleExpressionTimezone: Asia/Kolkata
+            Input: '{"action": "run_all"}'
+    Metadata:
+      BuildMethod: makefile
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: saans.lambdas.api_handler
+      Timeout: 10
+      MemorySize: 512
+      Environment:
+        Variables:
+          WORKER_FUNCTION: !Ref WorkerFunction
+      Policies:
+        - DynamoDBCrudPolicy: { TableName: !Ref Table }
+        - SSMParameterReadPolicy: { ParameterName: !Select [1, !Split ["/", !Ref TelegramTokenParam]] }
+        - LambdaInvokePolicy: { FunctionName: !Ref WorkerFunction }
+      Events:
+        Telegram:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: /telegram, Method: POST }
+        RunNow:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: /run-now, Method: POST }
+        Status:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: /status, Method: GET }
+        Schools:
+          Type: HttpApi
+          Properties: { ApiId: !Ref HttpApi, Path: /schools, Method: GET }
+    Metadata:
+      BuildMethod: makefile
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: ["*"]
+        AllowMethods: [GET, POST]
+        AllowHeaders: [content-type]
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 10
+        ThrottlingRateLimit: 2
+
+Outputs:
+  ApiUrl:
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com
+  WebhookUrl:
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/telegram
+  TableName:
+    Value: !Ref Table
+  AudioBucketName:
+    Value: !Ref AudioBucket
+  WorkerFunctionName:
+    Value: !Ref WorkerFunction

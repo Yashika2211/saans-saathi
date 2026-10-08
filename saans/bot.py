@@ -192,5 +192,22 @@ def poll() -> None:
             return
 
 
+def set_webhook(url: str) -> None:
+    """Point Telegram at the deployed API (stops local polling from receiving updates)."""
+    from .channel import TelegramChannel
+    from .config import load_env
+    from .lambdas import webhook_secret
+
+    load_env()
+    channel = TelegramChannel()
+    channel.set_webhook(url, webhook_secret(channel.token))
+    print(f"webhook set to {url}")
+
+
 if __name__ == "__main__":
-    poll()
+    import sys
+
+    if len(sys.argv) == 3 and sys.argv[1] == "--set-webhook":
+        set_webhook(sys.argv[2])
+    else:
+        poll()
