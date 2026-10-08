@@ -8,3 +8,4 @@ node_modules/
 dist/
 out/
 .DS_Store
+fixtures/*_live_*.json
