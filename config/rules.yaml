@@ -1,0 +1,49 @@
+# SaansSaathi rules.
+# Every threshold is an AQI (est.) value on the CPCB NAQI scale (0-500), taken from the
+# hourly forecast for the hours an activity actually runs. Change numbers here, not in code.
+
+# Per-activity bands. "outdoor" decides what happens to an outdoor timetable block:
+#   keep  - stays outdoors
+#   move  - not outdoors in this air. A block that can move goes to the cleanest
+#           school-hours window if that window is <= reschedule.max_target_aqi,
+#           otherwise it goes indoors. A block that can't move (assembly, recess) goes indoors.
+bands:
+  - id: satisfactory
+    min: 0
+    max: 100
+    outdoor: keep
+  - id: moderate
+    min: 101
+    max: 200
+    outdoor: keep
+    note: "sensitive children take it easy"
+  - id: poor
+    min: 201
+    max: 300
+    outdoor: move
+  - id: very_poor
+    min: 301
+    max: 400
+    outdoor: move
+  - id: severe
+    min: 401
+    max: 500
+    outdoor: move
+
+reschedule:
+  max_target_aqi: 200   # never move an activity into air worse than this
+  step_minutes: 30      # candidate start times inside school hours
+
+# Whole-day actions, triggered by the forecast during school or commute hours.
+day_actions:
+  windows_closed:
+    min_aqi: 301        # close windows during school hours at or above this
+  masks_on_commute:
+    min_aqi: 301        # worst hour around arrival or departure at or above this
+    commute_minutes: 30 # how long before start / after end counts as commute
+  grap_check:
+    min_aqi: 401        # worst school hour at or above this
+    text: "Check the latest GRAP / CAQM order on hybrid classes."
+
+# Activities that count towards impact: moved out of air at or above this.
+impact_min_aqi: 201
