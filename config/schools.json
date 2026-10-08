@@ -1,0 +1,47 @@
+{
+  "_note": "Fictional demo schools at real Delhi coordinates. Names, headcounts and timetables are made up.",
+  "schools": [
+    {
+      "id": "demo-1",
+      "join_code": "DEMO1",
+      "name": "Demo School 1, Anand Vihar (demo)",
+      "area": "Anand Vihar, Delhi",
+      "lat": 28.6469,
+      "lon": 77.3159,
+      "students": 1200,
+      "timetable": "default"
+    },
+    {
+      "id": "demo-2",
+      "join_code": "DEMO2",
+      "name": "Demo School 2, RK Puram (demo)",
+      "area": "RK Puram, Delhi",
+      "lat": 28.5633,
+      "lon": 77.1869,
+      "students": 900,
+      "timetable": "default"
+    },
+    {
+      "id": "demo-3",
+      "join_code": "DEMO3",
+      "name": "Demo School 3, Dwarka (demo)",
+      "area": "Dwarka, Delhi",
+      "lat": 28.5710,
+      "lon": 77.0719,
+      "students": 1500,
+      "timetable": "default"
+    }
+  ],
+  "timetables": {
+    "default": {
+      "school_hours": {"start": "07:30", "end": "13:30"},
+      "blocks": [
+        {"name": "Assembly", "start": "07:40", "end": "08:00", "outdoor": true, "can_move": false, "students": "all"},
+        {"name": "PE (Classes 6-8)", "start": "08:00", "end": "08:40", "outdoor": true, "can_move": true, "students": 120},
+        {"name": "PE (Classes 9-10)", "start": "09:20", "end": "10:00", "outdoor": true, "can_move": true, "students": 90},
+        {"name": "Recess", "start": "10:40", "end": "11:00", "outdoor": true, "can_move": false, "students": "all"},
+        {"name": "PE (Classes 3-5)", "start": "11:40", "end": "12:20", "outdoor": true, "can_move": true, "students": 100}
+      ]
+    }
+  }
+}
